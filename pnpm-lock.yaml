@@ -29,6 +29,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.1
+      socket.io:
+        specifier: ^4.7.5
+        version: 4.7.5
     devDependencies:
       '@nestjs/cli':
         specifier: ^10.0.0
