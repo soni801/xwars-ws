@@ -68,6 +68,21 @@ export class AppGateway {
   }
 
   /**
+   * Broadcasts a tile placement to all other sockets in the same rooms as this socket
+   *
+   * @param body The tile placement data to broadcast
+   * @param socket The Socket making the request
+   * @returns Always true
+   */
+  @SubscribeMessage('take')
+  takeTile(
+    @MessageBody() body: string,
+    @ConnectedSocket() socket: Socket,
+  ): boolean {
+    return socket.broadcast.in(Array.from(socket.rooms)).emit('take', body);
+  }
+
+  /**
    * Creates a unique lobby code
    *
    * @param length How many symbols the code will include
