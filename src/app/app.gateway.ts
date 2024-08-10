@@ -42,9 +42,12 @@ export class AppGateway {
     if (socket.rooms.size > 1)
       throw new WsException('This Socket is already in a lobby');
 
+    // Add this Socket ID to the player properties
+    player.socketId = socket.id;
+
     // Create the lobby with a new code
     const code = this.createLobbyCode(4);
-    const lobby: Lobby = { code, players: [player] };
+    const lobby: Lobby = { code, players: [player], currentPlayer: 0 };
     this.lobbies.push(lobby);
 
     // Add this socket to a socket.io room with the lobby code
@@ -80,6 +83,9 @@ export class AppGateway {
     if (lobby.players.length > 1)
       throw new WsException('The specified lobby is full');
 
+    // Add this Socket ID to the player properties
+    body.player.socketId = socket.id;
+
     // Add this player to the lobby
     lobby.players.push(body.player);
 
@@ -94,13 +100,33 @@ export class AppGateway {
    *
    * @param body The tile placement data to broadcast
    * @param socket The Socket making the request
-   * @returns Always true
+   * @returns Always `true`
+   *
+   * @throws {WsException} This Socket is not in a lobby
+   * @throws {WsException} It is not this Socket's player's turn
    */
   @SubscribeMessage('take')
   takeTile(
     @MessageBody() body: TakeTileDto,
     @ConnectedSocket() socket: Socket,
   ): boolean {
+    // Make sure the Socket is in a lobby
+    if (socket.rooms.size < 2)
+      throw new WsException('This Socket is not in a lobby');
+
+    // Get the lobby this Socket is in
+    const lobby = this.lobbies.find(
+      (lobby) => lobby.code === [...socket.rooms][1],
+    );
+
+    // Make sure this Socket is the current player's turn
+    if (lobby.players[lobby.currentPlayer].socketId !== socket.id)
+      throw new WsException("It is not this Socket's player's turn");
+
+    // Increment current player
+    if (++lobby.currentPlayer > 1) lobby.currentPlayer = 0;
+
+    // Broadcast tile placement in socket.io room
     return socket.broadcast.in(Array.from(socket.rooms)).emit('take', body);
   }
 
