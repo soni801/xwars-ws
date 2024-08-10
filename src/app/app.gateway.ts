@@ -8,7 +8,12 @@ import { Socket } from 'socket.io';
 import { Lobby } from '../models/lobby.model';
 import { Player } from '../models/player.model';
 import { JoinLobbyDto } from '../dto/join-lobby.dto';
+import { TakeTileDto } from '../dto/take-tile.dto';
+import { UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
+import { BadRequestTransformationFilter } from '../filter/bad-request-transformation.filter';
 
+@UseFilters(BadRequestTransformationFilter)
+@UsePipes(new ValidationPipe())
 @WebSocketGateway()
 export class AppGateway {
   /**
@@ -76,7 +81,7 @@ export class AppGateway {
    */
   @SubscribeMessage('take')
   takeTile(
-    @MessageBody() body: string,
+    @MessageBody() body: TakeTileDto,
     @ConnectedSocket() socket: Socket,
   ): boolean {
     return socket.broadcast.in(Array.from(socket.rooms)).emit('take', body);
