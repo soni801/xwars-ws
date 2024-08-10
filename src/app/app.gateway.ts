@@ -92,7 +92,11 @@ export class AppGateway {
     // Add this socket to the socket.io room
     socket.join(body.code);
 
-    return this.lobbies.find((lobby) => lobby.code === body.code);
+    // Broadcast this player to other Sockets in the same room
+    socket.broadcast.in(Array.from(socket.rooms)).emit('join', body);
+
+    // Return the populated lobby to the Socket
+    return lobby;
   }
 
   /**
