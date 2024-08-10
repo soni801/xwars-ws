@@ -42,8 +42,9 @@ export class AppGateway {
     if (socket.rooms.size > 1)
       throw new WsException('This Socket is already in a lobby');
 
-    // Add this Socket ID to the player properties
+    // Add missing player properties
     player.socketId = socket.id;
+    player.ready = false;
 
     // Create the lobby with a new code
     const code = this.createLobbyCode(4);
@@ -83,8 +84,9 @@ export class AppGateway {
     if (lobby.players.length > 1)
       throw new WsException('The specified lobby is full');
 
-    // Add this Socket ID to the player properties
+    // Add missing player properties
     body.player.socketId = socket.id;
+    body.player.ready = false;
 
     // Add this player to the lobby
     lobby.players.push(body.player);
@@ -132,6 +134,35 @@ export class AppGateway {
 
     // Broadcast tile placement in socket.io room
     return socket.broadcast.in(Array.from(socket.rooms)).emit('take', body);
+  }
+
+  /**
+   * Toggles whether the player belonging to this Socket is ready to start the game
+   *
+   * @param socket The Socket making the request
+   * @returns Whether the player is ready
+   *
+   * @throws {WsException} This Socket is not in a lobby
+   */
+  @SubscribeMessage('ready')
+  readyPlayer(@ConnectedSocket() socket: Socket): boolean {
+    // Make sure the Socket is in a lobby
+    if (socket.rooms.size < 2)
+      throw new WsException('This Socket is not in a lobby');
+
+    // Get the lobby this Socket is in
+    const lobby = this.lobbies.find(
+      (lobby) => lobby.code === [...socket.rooms][1],
+    );
+
+    // Get the Player this Socket is playing with
+    const player = lobby.players.find(
+      (player) => player.socketId === socket.id,
+    );
+
+    // Invert player ready state
+    player.ready = !player.ready;
+    return player.ready;
   }
 
   /**

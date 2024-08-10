@@ -1,4 +1,10 @@
-import { IsHexColor, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsHexColor,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class Player {
   @IsString()
@@ -8,6 +14,11 @@ export class Player {
   @IsHexColor()
   color: string;
 
+  @IsString()
   @IsOptional()
   socketId?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  ready?: boolean;
 }
