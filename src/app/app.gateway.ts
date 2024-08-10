@@ -3,6 +3,7 @@ import {
   MessageBody,
   SubscribeMessage,
   WebSocketGateway,
+  WsException,
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { Lobby } from '../models/lobby.model';
@@ -29,12 +30,18 @@ export class AppGateway {
    * @param player The Player that is creating the lobby
    * @param socket The Socket making the request
    * @returns The created lobby
+   *
+   * @throws {WsException} This Socket is already in a lobby
    */
   @SubscribeMessage('create')
   createLobby(
     @MessageBody() player: Player,
     @ConnectedSocket() socket: Socket,
   ): Lobby {
+    // Make sure this Socket isn't already in a lobby
+    if (socket.rooms.size > 1)
+      throw new WsException('This Socket is already in a lobby');
+
     // Create the lobby with a new code
     const code = this.createLobbyCode(4);
     const lobby: Lobby = { code, players: [player] };
@@ -52,19 +59,29 @@ export class AppGateway {
    * @param body The request body
    * @param socket The Socket making the request
    * @returns The lobby updated with this player
+   *
+   * @throws {WsException} This Socket is already in a lobby
+   * @throws {WsException} The specified lobby is full
    */
   @SubscribeMessage('join')
   joinLobby(
     @MessageBody() body: JoinLobbyDto,
     @ConnectedSocket() socket: Socket,
   ): Lobby {
+    // Make sure this Socket isn't already in a lobby
+    if (socket.rooms.size > 1)
+      throw new WsException('This Socket is already in a lobby');
+
     // Make sure that the lobby exists
     if (!this.lobbies.some((lobby) => lobby.code === body.code)) return null;
 
+    // Make sure that the lobby isn't full
+    const lobby = this.lobbies.find((lobby) => lobby.code === body.code);
+    if (lobby.players.length > 1)
+      throw new WsException('The specified lobby is full');
+
     // Add this player to the lobby
-    this.lobbies
-      .find((lobby) => lobby.code === body.code)
-      .players.push(body.player);
+    lobby.players.push(body.player);
 
     // Add this socket to the socket.io room
     socket.join(body.code);
