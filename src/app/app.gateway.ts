@@ -48,7 +48,12 @@ export class AppGateway {
 
     // Create the lobby with a new code
     const code = this.createLobbyCode(4);
-    const lobby: Lobby = { code, players: [player], currentPlayer: 0 };
+    const lobby: Lobby = {
+      code,
+      players: [player],
+      inGame: false,
+      currentPlayer: 0,
+    };
     this.lobbies.push(lobby);
 
     // Add this socket to a socket.io room with the lobby code
@@ -124,6 +129,10 @@ export class AppGateway {
     const lobby = this.lobbies.find(
       (lobby) => lobby.code === [...socket.rooms][1],
     );
+
+    // Make sure the lobby is "in game"
+    if (!lobby.inGame)
+      throw new WsException('This lobby is not in an active game');
 
     // Make sure this Socket is the current player's turn
     if (lobby.players[lobby.currentPlayer].socketId !== socket.id)
