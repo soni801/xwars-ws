@@ -70,6 +70,7 @@ export class AppGateway {
    * @returns The lobby updated with this player
    *
    * @throws {WsException} This Socket is already in a lobby
+   * @throws {WsException} The specified lobby doesn't exist
    * @throws {WsException} The specified lobby is full
    */
   @SubscribeMessage('join')
@@ -82,7 +83,8 @@ export class AppGateway {
       throw new WsException('This Socket is already in a lobby');
 
     // Make sure that the lobby exists
-    if (!this.lobbies.some((lobby) => lobby.code === body.code)) return null;
+    if (!this.lobbies.some((lobby) => lobby.code === body.code))
+      throw new WsException("The specified lobby doesn't exist");
 
     // Make sure that the lobby isn't full
     const lobby = this.lobbies.find((lobby) => lobby.code === body.code);
@@ -104,6 +106,42 @@ export class AppGateway {
 
     // Return the populated lobby to the Socket
     return lobby;
+  }
+
+  /**
+   * Leaves the currently joined lobby
+   *
+   * @param socket The Socket making the request
+   * @returns Always `true`
+   *
+   * @throws {WsException} This Socket is not in a lobby
+   */
+  @SubscribeMessage('leave')
+  leaveLobby(@ConnectedSocket() socket: Socket): boolean {
+    // Make sure the Socket is in a lobby
+    if (socket.rooms.size < 2)
+      throw new WsException('This Socket is not in a lobby');
+
+    // Get the lobby this Socket is in
+    const lobby = this.lobbies.find(
+      (lobby) => lobby.code === [...socket.rooms][1],
+    );
+
+    // Get the Player this Socket is playing with
+    const player = lobby.players.find(
+      (player) => player.socketId === socket.id,
+    );
+    const playerIndex = lobby.players.indexOf(player);
+
+    // Remove player from the lobby
+    lobby.players.splice(playerIndex, 1);
+
+    // Notify other Sockets in the same room
+    socket.broadcast.in(Array.from(socket.rooms)).emit('leave', player);
+
+    // Leave the socket.io room
+    socket.leave(lobby.code);
+    return true;
   }
 
   /**
