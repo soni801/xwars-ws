@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  xwars-ws:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: xwars-ws
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # NestJS specific environment variables
+      - PORT=3000
+    # Enable health check
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Add logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

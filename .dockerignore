@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+
+# Node.js
+node_modules
+npm-debug.log
+pnpm-debug.log
+
+# Build output
+dist
+build
+coverage
+
+# IDE files
+.idea
+.vscode
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Docker files
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Test files
+test
+**/*.spec.ts
+**/*.test.ts
+
+# Misc
+README.md
+LICENSE
+.DS_Store

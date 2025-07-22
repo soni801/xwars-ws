@@ -45,6 +45,71 @@ $ pnpm run start:dev
 $ pnpm run start:prod
 ```
 
+## Docker
+
+This application can be run in a Docker container. We provide both a Dockerfile and docker-compose.yml for your convenience.
+
+### Using Docker
+
+```bash
+# Build the Docker image
+$ docker build -t xwars-ws .
+
+# Run the container
+$ docker run -p 3000:3000 xwars-ws
+```
+
+### Using Docker Compose
+
+```bash
+# Build and start the container
+$ docker-compose up -d
+
+# View logs
+$ docker-compose logs -f
+
+# Stop the container
+$ docker-compose down
+```
+
+### NestJS Docker Best Practices
+
+Our Docker configuration follows these NestJS-specific best practices:
+
+1. **Security**: Running the application as a non-root user to enhance security.
+2. **Health Checks**: Implementing health checks to ensure the application is running properly.
+3. **Resource Management**: Setting CPU and memory limits to prevent resource exhaustion.
+4. **Environment Configuration**: Using environment variables for configuration.
+5. **Log Management**: Configuring log rotation to prevent disk space issues.
+6. **Multi-stage Builds**: Using multi-stage builds to create smaller production images.
+
+### Recommended Improvements
+
+For a more production-ready NestJS application in Docker, consider implementing:
+
+1. **Dedicated Health Check Module**: Add the `@nestjs/terminus` package to implement proper health checks.
+   ```bash
+   $ pnpm add @nestjs/terminus
+   ```
+
+2. **Graceful Shutdown**: Update the main.ts file to handle termination signals properly:
+   ```typescript
+   // In main.ts
+   const app = await NestFactory.create(AppModule);
+   
+   // Handle shutdown signals
+   process.on('SIGTERM', async () => {
+     console.log('SIGTERM received, shutting down gracefully');
+     await app.close();
+     process.exit(0);
+   });
+   ```
+
+3. **Configuration Management**: Use `@nestjs/config` for better environment variable management.
+   ```bash
+   $ pnpm add @nestjs/config
+   ```
+
 ## Test
 
 ```bash
