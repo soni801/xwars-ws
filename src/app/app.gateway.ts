@@ -12,6 +12,7 @@ import { JoinLobbyDto } from '../dto/join-lobby.dto';
 import { TakeTileDto } from '../dto/take-tile.dto';
 import { UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { BadRequestTransformationFilter } from '../filter/bad-request-transformation.filter';
+import { ReadyDto } from '../dto/ready.dto';
 
 @UseFilters(BadRequestTransformationFilter)
 @UsePipes(new ValidationPipe())
@@ -186,13 +187,17 @@ export class AppGateway {
   /**
    * Toggles whether the player belonging to this Socket is ready to start the game
    *
+   * @param body The updated player information
    * @param socket The Socket making the request
    * @returns Whether the player is ready
    *
    * @throws {WsException} This Socket is not in a lobby
    */
   @SubscribeMessage('ready')
-  readyPlayer(@ConnectedSocket() socket: Socket): boolean {
+  readyPlayer(
+    @MessageBody() body: ReadyDto,
+    @ConnectedSocket() socket: Socket,
+  ): boolean {
     // Make sure the Socket is in a lobby
     if (socket.rooms.size < 2)
       throw new WsException('This Socket is not in a lobby');
@@ -207,8 +212,15 @@ export class AppGateway {
       (player) => player.socketId === socket.id,
     );
 
-    // Invert player ready state
-    player.ready = !player.ready;
+    // Update player information
+    player.name = body.player.name;
+    player.color = body.player.color;
+
+    // Update player ready state
+    player.ready = body.ready;
+
+    // Broadcast tile placement in the socket.io room
+    socket.broadcast.in(Array.from(socket.rooms)).emit('ready', body);
     return player.ready;
   }
 
