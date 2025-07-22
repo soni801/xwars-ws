@@ -5,4 +5,5 @@ export class Lobby {
   players: Player[];
   inGame: boolean;
   currentPlayer: number;
+  startTimeoutId?: NodeJS.Timeout;
 }

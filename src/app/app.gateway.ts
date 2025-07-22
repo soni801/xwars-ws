@@ -207,6 +207,10 @@ export class AppGateway {
       (lobby) => lobby.code === [...socket.rooms][1],
     );
 
+    // Make sure there are two players in this lobby
+    if (lobby.players.length < 2)
+      throw new WsException('There must be two players in the lobby');
+
     // Get the Player this Socket is playing with
     const player = lobby.players.find(
       (player) => player.socketId === socket.id,
@@ -219,8 +223,35 @@ export class AppGateway {
     // Update player ready state
     player.ready = body.ready;
 
-    // Broadcast tile placement in the socket.io room
+    // Broadcast player data in the socket.io room
     socket.broadcast.in(Array.from(socket.rooms)).emit('ready', body);
+
+    // If both players are ready and the countdown isn't active, start it
+    if (
+      lobby.players.every((player) => player.ready) &&
+      !lobby.startTimeoutId
+    ) {
+      // Inform the clients that the countdown is starting
+      socket.emit('start', 0);
+      socket.broadcast.in(Array.from(socket.rooms)).emit('start', 0);
+
+      // Schedule the game start
+      lobby.startTimeoutId = setTimeout(() => {
+        lobby.inGame = true;
+        socket.emit('start', 1);
+        socket.broadcast.in(Array.from(socket.rooms)).emit('start', 1);
+      }, 5000);
+    }
+
+    // Cancel countdown if it was started but player is now unready
+    if (lobby.startTimeoutId && !player.ready) {
+      clearTimeout(lobby.startTimeoutId);
+      lobby.startTimeoutId = undefined;
+      // Inform clients
+      socket.emit('start', -1);
+      socket.broadcast.in(Array.from(socket.rooms)).emit('start', -1);
+    }
+
     return player.ready;
   }
 
