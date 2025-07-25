@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   xwars-ws:
     build:
@@ -20,9 +18,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    # Add logging configuration
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
