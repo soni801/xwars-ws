@@ -16,7 +16,12 @@ import { ReadyDto } from '../dto/ready.dto';
 
 @UseFilters(BadRequestTransformationFilter)
 @UsePipes(new ValidationPipe())
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+})
 export class AppGateway {
   /**
    * A list of the currently active game lobbies
